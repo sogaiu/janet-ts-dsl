@@ -32,6 +32,24 @@
 
   )
 
+(defn escape-string
+  [a-str]
+  (->> a-str
+       (string/replace-all "\\" "\\\\")
+       (string/replace-all "\"" "\\\"")))
+
+(comment
+
+  (escape-string "hello")
+  # =>
+  "hello"
+
+  (escape-string "\"")
+  # =>
+  "\\\""
+
+  )
+
 (defn find-spanning-map
   [map-info]
   (var min-bound (get-in map-info [0 0]))

@@ -3,7 +3,7 @@
 (comment
 
   (let [buf @""]
-    (gen-defs-rule! [:repeat "_"] buf))
+    (emit-defs-rule! [:repeat "_"] buf))
   # =>
   @``
    {
@@ -16,7 +16,8 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! [:token [:choice "false" "true"]] buf))
+    (emit-defs-rule! [:token [:choice "false" "true"]]
+                     buf))
   # =>
   @``
    {
@@ -38,7 +39,7 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! [:seq "," :_lit] buf))
+    (emit-defs-rule! [:seq "," :_lit] buf))
   # =>
   @``
    {
@@ -57,10 +58,10 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! [:prec 5 [:choice :_dec
-                                      :_hex
-                                      :_radix]]
-                    buf))
+    (emit-defs-rule! [:prec 5 [:choice :_dec
+                                       :_hex
+                                       :_radix]]
+                     buf))
   # =>
   @``
    {
@@ -87,8 +88,7 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! [:optional "."]
-                    buf))
+    (emit-defs-rule! [:optional "."] buf))
   # =>
   @``
    {

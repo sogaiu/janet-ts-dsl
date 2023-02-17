@@ -3,6 +3,9 @@
 # 1. grammar-schema.json in tree-sitter repos (incomplete though)
 # 2. tree-sitter.github.io/tree-sitter/creating-parsers#the-grammar-dsl
 
+(import ./emit-json :prefix "")
+(import ./common :prefix "")
+
 (def grammar-keys-in-order
   [:name
    :word
@@ -14,7 +17,7 @@
    :inline
    :supertypes])
 
-(defn gen-name!
+(defn emit-name!
   [grammar buf]
   (def name-maybe
     (get grammar :name))
@@ -27,19 +30,19 @@
           (string/format "name contains unallowed chars: %s"
                          name-maybe))
   #
-  (buffer/push-string buf "\"" name-maybe "\""))
+  (emit-str! name-maybe buf))
 
 (comment
 
   (let [buf @""]
-    (gen-name! {:name "janet_simple"} buf))
+    (emit-name! {:name "janet_simple"} buf))
   # =>
   @"\"janet_simple\""
 
   (let [buf @""
         result
         (try
-          (gen-name! {:name "2fun"} buf)
+          (emit-name! {:name "2fun"} buf)
           ([err]
             err))]
     (string/has-prefix? "name contains unallowed" result))
@@ -47,12 +50,12 @@
   true
 
   (let [buf @""]
-    (gen-name! {:name "clojure"} buf))
+    (emit-name! {:name "clojure"} buf))
   # =>
   @"\"clojure\""
   )
 
-(defn gen-word!
+(defn emit-word!
   [grammar buf]
   (def word-maybe
     (get grammar :word))
@@ -71,45 +74,18 @@
           (string/format "word contains unallowed chars: %s"
                          word-as-str))
   #
-  (buffer/push-string buf "\"" word-as-str "\"")
+  (emit-str! word-as-str buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-word! {:word :basic_identifier} buf))
+    (emit-word! {:word :basic_identifier} buf))
   # =>
   @"\"basic_identifier\""
 
   )
-
-(defn escape-string
-  [a-str]
-  (->> a-str
-       (string/replace-all "\\" "\\\\")
-       (string/replace-all "\"" "\\\"")))
-
-(comment
-
-  (escape-string "hello")
-  # =>
-  "hello"
-
-  (escape-string "\"")
-  # =>
-  "\\\""
-
-  )
-
-(defn push-comma-nl
-  [buf]
-  (buffer/push-string buf ",\n"))
-
-(defn pop-comma-nl-maybe
-  [buf]
-  (when (string/has-suffix? ",\n" (slice buf -3))
-    (buffer/popn buf 2)))
 
 # see "definitions" in grammar-schema.json
 #
@@ -130,7 +106,7 @@
 #
 # * prec-rule <- prec.left, prec.right, prec.dynamic
 
-(defn gen-defs-rule!
+(defn emit-defs-rule!
   [item buf]
   (def type-of-item (type item))
   (assert (or (= :tuple type-of-item)
@@ -139,107 +115,54 @@
           (string/format "should be a tuple, keyword, or string, found %M"
                          type-of-item))
   #
-  (when (= :keyword type-of-item)
-    (buffer/push-string buf
-                        "{\n"
-                        "  \"type\": \"SYMBOL\",\n"
-                        "  \"name\": \"" (string item) "\""
-                        "\n}")
-    # early return
-    (break buf))
-  #
-  (when (= :string type-of-item)
-    (buffer/push-string buf
-                        "{\n"
-                        "  \"type\": \"STRING\",\n"
-                        "  \"value\": \"" (escape-string item) "\""
-                        "\n}")
-    # early return
-    (break buf))
+  (case type-of-item
+    :keyword
+    (do
+      (emit-sym-obj! item buf)
+      # early return
+      (break buf))
+    #
+    :string
+    (do
+      (emit-str-obj! item buf)
+      # early return
+      (break buf)))
   # item is a tuple at this point
   (def head (first item))
   #
-  (buffer/push-string buf "{\n")
-  #
-  (case head
-    :repeat
+  (cond
+    (index-of head [:repeat :repeat1
+                    :token :immediate_token])
     (do
-      (buffer/push-string buf
-                          "  \"type\": \"REPEAT\",\n"
-                          "  \"content\": ")
-      # repeat takes one argument
-      (gen-defs-rule! (get item 1) buf))
+      (emit-start-tc-obj! head buf)
+      (emit-defs-rule! (get item 1) buf)
+      (emit-end-tc-obj! buf))
     #
-    :repeat1
+    (index-of head [:choice :seq])
     (do
-      (buffer/push-string buf
-                          "  \"type\": \"REPEAT1\",\n"
-                          "  \"content\": ")
-      # repeat1 takes one argument
-      (gen-defs-rule! (get item 1) buf))
-    #
-    :token
-    (do
-      (buffer/push-string buf
-                          "  \"type\": \"TOKEN\",\n"
-                          "  \"content\": ")
-      # token takes one argument
-      (gen-defs-rule! (get item 1) buf))
-    #
-    :immediate_token
-    (do
-      (buffer/push-string buf
-                          "  \"type\": \"IMMEDIATE_TOKEN\",\n"
-                          "  \"content\": ")
-      # immediate.token takes one argument
-      (gen-defs-rule! (get item 1) buf))
-    #
-    :choice
-    (do
-      (buffer/push-string buf
-                          "  \"type\": \"CHOICE\",\n"
-                          "  \"members\": ")
-      (buffer/push-string buf "[\n")
-      (each member (slice item 1)
-        (gen-defs-rule! member buf)
-        (push-comma-nl buf))
-      (pop-comma-nl-maybe buf)
+      (emit-start-tm-obj! head buf)
       #
-      (buffer/push-string buf "\n]"))
+      (each member (slice item 1)
+        (emit-defs-rule! member buf)
+        (emit-comma-nl! buf))
+      (pop-comma-nl-maybe! buf)
+      #
+      (emit-end-tm-obj! buf))
     #
-    :optional
+    (= :optional head)
     (do
       # optional is implemented in terms of CHOICE and BLANK
-      (buffer/push-string buf
-                          "  \"type\": \"CHOICE\",\n"
-                          "  \"members\": ")
-      (buffer/push-string buf "[\n")
-      (gen-defs-rule! (get item 1) buf)
-      (push-comma-nl buf)
-      (buffer/push-string buf
-                          "{\n"
-                          "  \"type\": \"BLANK\""
-                          "\n}")
+      (emit-start-tm-obj! "choice" buf)
       #
-      (buffer/push-string buf "\n]"))
-    #
-    :seq
-    (do
-      (buffer/push-string buf
-                          "  \"type\": \"SEQ\",\n"
-                          "  \"members\": ")
-      (buffer/push-string buf "[\n")
-      (each member (slice item 1)
-        (gen-defs-rule! member buf)
-        (push-comma-nl buf))
-      (pop-comma-nl-maybe buf)
+      (emit-defs-rule! (get item 1) buf)
+      (emit-comma-nl! buf)
+      (emit-t-obj! "blank" buf)
       #
-      (buffer/push-string buf "\n]"))
+      (emit-end-tm-obj! buf))
     #
-    :prec
+    (index-of head [:prec :prec_dynamic])
     (do
-      (buffer/push-string buf "  \"type\": \"PREC\",\n")
-      # prec takes 2 arguments
+      # prec / prec.dynamic takes 2 arguments
       (def prec-val
         # first argument to prec can be an integer or string
         (let [val (get item 1)
@@ -252,19 +175,15 @@
             (string "\"" val "\"")
             #
             (errorf "unexpected val: %M" val))))
-      (buffer/push-string buf
-                          "  \"value\": " prec-val ",\n"
-                          "  \"content\": ")
-      (gen-defs-rule! (get item 2) buf))
+      (emit-start-tvc-obj! head prec-val buf)
+      #
+      (emit-defs-rule! (get item 2) buf)
+      #
+      (emit-end-tvc-obj! buf))
     #
-    :alias
+    (= :alias head)
     (do
-      (buffer/push-string buf
-                          "  \"type\": \"ALIAS\",\n"
-                          "  \"content\": ")
       # alias takes 2 arguments
-      (gen-defs-rule! (get item 1) buf)
-      (push-comma-nl buf)
       (def alias-name
         (get item 2))
       (def is-named?
@@ -277,38 +196,41 @@
             false
             #
             (errorf "unexpected type for alias-name: %M" alias-name))))
-      (buffer/push-string buf
-                          "  \"named\": " (string is-named?) ",\n"
-                          "  \"value\": " "\"" (string alias-name) "\""))
+      # may look a bit weird, but don't worry
+      (emit-start-tc-obj! head buf)
+      (emit-defs-rule! (get item 1) buf)
+      (emit-comma-nl! buf)
+      (emit-indentation! buf)
+      (emit-property! "named" is-named? buf)
+      (emit-comma-nl! buf)
+      (emit-indentation! buf)
+      (emit-property! "value" (string "\"" alias-name "\"") buf)
+      (emit-end-obj! buf))
     #
-    :field
+    (= :field head)
     (do
-      (buffer/push-string buf
-                          "  \"type\": \"FIELD\",\n"
-                          "  \"name\": " "\"" (string (get item 1)) "\",\n"
-                          "  \"content\": " )
       # field takes 2 arguments
-      (gen-defs-rule! (get item 2) buf))
-    # XXX: more to fill in
+      (emit-start-tnc-obj! head (get item 1) buf)
+      #
+      (emit-defs-rule! (get item 2) buf)
+      #
+      (emit-end-tnc-obj! buf))
     #
-    :regex
+    (= :regex head)
     (do
-      (buffer/push-string buf
-                          "  \"type\": \"PATTERN\",\n"
-                          "  \"value\": \""
-                          (escape-string (string ;(slice item 1)))
-                          "\""))
+      (def re-pattern
+        (escape-string (string ;(slice item 1))))
+      (emit-tv-obj! "pattern" re-pattern buf))
+    # XXX: prec.left and prec.right not done yet
     #
     (errorf "Unknown item: %M" head))
-  #
-  (buffer/push-string buf "\n}")
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-defs-rule! [:regex "[" "0-9" "]"] buf))
+    (emit-defs-rule! [:regex "[" "0-9" "]"] buf))
   # =>
   @``
    {
@@ -318,7 +240,7 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! :num_lit buf))
+    (emit-defs-rule! :num_lit buf))
   # =>
   @``
    {
@@ -328,7 +250,7 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! "nil" buf))
+    (emit-defs-rule! "nil" buf))
   # =>
   @``
    {
@@ -338,7 +260,7 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! [:repeat :_lit] buf))
+    (emit-defs-rule! [:repeat :_lit] buf))
   # =>
   @``
    {
@@ -351,7 +273,7 @@
    ``
 
   (let [buf @""]
-    (gen-defs-rule! [:choice "-" "+"] buf))
+    (emit-defs-rule! [:choice "-" "+"] buf))
   # =>
   @``
    {
@@ -371,7 +293,7 @@
 
   )
 
-(defn gen-rules!
+(defn emit-rules!
   [grammar rules-names buf]
   (def rules-maybe
     (get grammar :rules))
@@ -384,20 +306,22 @@
   #
   (def rules rules-maybe)
   #
-  (buffer/push-string buf "{\n")
+  (emit-start-obj! buf)
+  #
   (each key rules-names
     (def expr
       (get rules key))
-    (buffer/push-string buf "  " "\"" (string key) "\": ")
-    (gen-defs-rule! expr buf)
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-indentation! buf)
+    (emit-key! key buf)
+    (emit-defs-rule! expr buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n}")
+  (emit-end-obj! buf)
   #
   buf)
 
-(defn gen-extras!
+(defn emit-extras!
   [grammar buf]
   (def extras-maybe
     (get grammar :extras))
@@ -413,21 +337,21 @@
       [[:regex "\\s"]]
       extras-maybe))
   #
-  (buffer/push-string buf "[\n")
+  (emit-start-array! buf)
   #
   (each extra extras
-    (gen-defs-rule! extra buf)
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-defs-rule! extra buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n]")
+  (emit-end-array! buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-extras! {:extras [[:regex "\\s|\\x0b|\\x0c|\\x00"]
+    (emit-extras! {:extras [[:regex "\\s|\\x0b|\\x0c|\\x00"]
                            [:regex "#.*"]]}
                  buf))
   # =>
@@ -446,7 +370,7 @@
 
   )
 
-(defn gen-conflicts!
+(defn emit-conflicts!
   [grammar buf]
   (def conflicts-maybe
     (get grammar :conflicts))
@@ -462,7 +386,7 @@
       []
       conflicts-maybe))
   #
-  (buffer/push-string buf "[\n")
+  (emit-start-array! buf)
   #
   (each conflict conflicts
     # each conflict is expected to be a tuple
@@ -472,26 +396,27 @@
             (string/format "conflict should be a tuple, found a %M"
                            type-of-conf))
     #
-    (buffer/push-string buf "[\n")
+    (emit-start-array! buf)
     #
     (each item conflict
-      (buffer/push-string buf "  " "\"" item "\"")
-      (push-comma-nl buf))
-    (pop-comma-nl-maybe buf)
+      (emit-indentation! buf)
+      (emit-str! item buf)
+      (emit-comma-nl! buf))
+    (pop-comma-nl-maybe! buf)
     #
-    (buffer/push-string buf "\n]")
+    (emit-end-array! buf)
     #
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n]")
+  (emit-end-array! buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-conflicts! {:conflicts [[:constant_primary :primary]
+    (emit-conflicts! {:conflicts [[:constant_primary :primary]
                                  [:primary :implicit_class_handle]]}
                     buf))
   # =>
@@ -509,7 +434,7 @@
    ``
   )
 
-(defn gen-externals!
+(defn emit-externals!
   [grammar buf]
   (def externals-maybe
     (get grammar :externals))
@@ -525,21 +450,21 @@
       []
       externals-maybe))
   #
-  (buffer/push-string buf "[\n")
+  (emit-start-array! buf)
   #
   (each external externals
-    (gen-defs-rule! external buf)
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-defs-rule! external buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n]")
+  (emit-end-array! buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-externals! {:externals [:long_buf_lit :long_str_lit]}
+    (emit-externals! {:externals [:long_buf_lit :long_str_lit]}
                     buf))
   # =>
   @``
@@ -557,7 +482,7 @@
 
   )
 
-(defn gen-precedences!
+(defn emit-precedences!
   [grammar buf]
   (def precedences-maybe
     (get grammar :precedences))
@@ -573,7 +498,7 @@
       []
       precedences-maybe))
   #
-  (buffer/push-string buf "[\n")
+  (emit-start-array! buf)
   #
   (each precedence precedences
     # each precedence is expected to be a tuple
@@ -583,26 +508,26 @@
             (string/format "precedence should be a tuple, found a %M"
                            type-of-prec))
     #
-    (buffer/push-string buf "[\n")
+    (emit-start-array! buf)
     #
     (each item precedence
-      (gen-defs-rule! item buf)
-      (push-comma-nl buf))
-    (pop-comma-nl-maybe buf)
+      (emit-defs-rule! item buf)
+      (emit-comma-nl! buf))
+    (pop-comma-nl-maybe! buf)
     #
-    (buffer/push-string buf "\n]")
+    (emit-end-array! buf)
     #
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n]")
+  (emit-end-array! buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-precedences! {:precedences [["document_directive" "body_directive"]
+    (emit-precedences! {:precedences [["document_directive" "body_directive"]
                                      ["special" "immediate" "non-immediate"]]}
                       buf))
   # =>
@@ -636,7 +561,7 @@
    ``
   )
 
-(defn gen-inline!
+(defn emit-inline!
   [grammar buf]
   (def inline-maybe
     (get grammar :inline))
@@ -652,21 +577,21 @@
       []
       inline-maybe))
   #
-  (buffer/push-string buf "[\n")
+  (emit-start-array! buf)
   #
   (each item inline
-    (buffer/push-string buf "\"" (string item) "\"")
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-str! item buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n]")
+  (emit-end-array! buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-inline! {:inline [:_sym_qualified
+    (emit-inline! {:inline [:_sym_qualified
                            :_sym_unqualified]}
                     buf))
   # =>
@@ -679,8 +604,7 @@
 
   )
 
-
-(defn gen-supertypes!
+(defn emit-supertypes!
   [grammar buf]
   (def supertypes-maybe
     (get grammar :supertypes))
@@ -696,21 +620,21 @@
       []
       supertypes-maybe))
   #
-  (buffer/push-string buf "[\n")
+  (emit-start-array! buf)
   #
   (each supertype supertypes
-    (gen-defs-rule! supertype buf)
-    (push-comma-nl buf))
-  (pop-comma-nl-maybe buf)
+    (emit-defs-rule! supertype buf)
+    (emit-comma-nl! buf))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n]")
+  (emit-end-array! buf)
   #
   buf)
 
 (comment
 
   (let [buf @""]
-    (gen-supertypes! {:supertypes [:_declaration
+    (emit-supertypes! {:supertypes [:_declaration
                                    :_expression
                                    :_statement
                                    :_type]} buf))
@@ -738,14 +662,14 @@
 
   )
 
-(defn gen-json!
+(defn emit-json!
   [grammar rules-names buf]
   (assert (and (get grammar :name)
                (get grammar :rules))
           (string/format "grammar's keys missing name and/or rules: %M"
                          (keys grammar)))
   #
-  (buffer/push-string buf "{\n")
+  (emit-start-obj! buf)
   #
   # XXX: consider fancier indentation later
   (each key grammar-keys-in-order
@@ -753,59 +677,42 @@
               # some keys need special handling - dsl.js / grammar.json
               (index-of key [:extras :conflicts :precedences
                              :externals :inline :supertypes]))
-      (buffer/push-string buf "  ")
+      (emit-indentation! buf)
+      (emit-key! key buf)
       (case key
         :name
-        (do
-          (buffer/push-string buf "\"name\": ")
-          (gen-name! grammar buf))
+        (emit-name! grammar buf)
         #
         :word
-        (do
-          (buffer/push-string buf "\"word\": ")
-          (gen-word! grammar buf))
+        (emit-word! grammar buf)
         #
         :rules
-        (do
-          (buffer/push-string buf "\"rules\": ")
-          (gen-rules! grammar rules-names buf))
+        (emit-rules! grammar rules-names buf)
         #
         :extras
-        (do
-          (buffer/push-string buf "\"extras\": ")
-          (gen-extras! grammar buf))
+        (emit-extras! grammar buf)
         #
         :conflicts
-        (do
-          (buffer/push-string buf "\"conflicts\": ")
-          (gen-conflicts! grammar buf))
+        (emit-conflicts! grammar buf)
         #
         :precedences
-        (do
-          (buffer/push-string buf "\"precedences\": ")
-          (gen-precedences! grammar buf))
+        (emit-precedences! grammar buf)
         #
         :externals
-        (do
-          (buffer/push-string buf "\"externals\": ")
-          (gen-externals! grammar buf))
+        (emit-externals! grammar buf)
         #
         :inline
-        (do
-          (buffer/push-string buf "\"inline\": ")
-          (gen-inline! grammar buf))
+        (emit-inline! grammar buf)
         #
         :supertypes
-        (do
-          (buffer/push-string buf "\"supertypes\": ")
-          (gen-supertypes! grammar buf))
+        (emit-supertypes! grammar buf)
         #
         (errorf "Unknown key: %M" key))
       #
-      (push-comma-nl buf)))
-  (pop-comma-nl-maybe buf)
+      (emit-comma-nl! buf)))
+  (pop-comma-nl-maybe! buf)
   #
-  (buffer/push-string buf "\n}\n")
+  (emit-end-obj! buf)
   #
   buf)
 
@@ -818,7 +725,7 @@
   ``
   [grammar rules-names]
   (let [buf @""]
-    (gen-json! grammar rules-names buf)
+    (emit-json! grammar rules-names buf)
     buf))
 
 (comment
@@ -859,7 +766,6 @@
 
    ]
    }
-
    ``
 
   )
