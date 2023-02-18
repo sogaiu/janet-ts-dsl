@@ -181,6 +181,36 @@
       #
       (emit-end-tvc-obj! buf))
     #
+    (index-of head [:prec_left :prec_right])
+    (do
+      (def n-args
+        (dec (length item)))
+      # prec.left / prec.right can take 1 or 2 arguments
+      (def prec-val
+        (cond
+          (= 1 n-args)
+          "0"
+          #
+          (= 2 n-args)
+          (let [val (get item 1)
+                type-of-v (type val)]
+            (cond
+              (= :number type-of-v)
+              (string val)
+              #
+              (= :string type-of-v)
+              (string "\"" val "\"")
+              #
+              (errorf "unexpected val: %M" val)))
+          #
+          (errorf "%M takes 1 or 2 arguments, not: %d"
+                  head n-args)))
+      (emit-start-tvc-obj! head prec-val buf)
+      #
+      (emit-defs-rule! (get item n-args) buf)
+      #
+      (emit-end-tvc-obj! buf))
+    #
     (= :alias head)
     (do
       # alias takes 2 arguments

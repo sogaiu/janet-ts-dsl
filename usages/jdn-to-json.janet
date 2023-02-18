@@ -105,4 +105,18 @@
    }
    ``
 
+  (let [buf @""]
+    (emit-defs-rule! [:prec_left :_expression] buf))
+  # =>
+  @``
+   {
+     "type": "PREC_LEFT",
+     "value": 0,
+     "content": {
+     "type": "SYMBOL",
+     "name": "_expression"
+   }
+   }
+   ``
+
   )
