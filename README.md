@@ -85,7 +85,8 @@ Some miscellaneous observations:
 
 * It's not necessary to express a grammar for Clojure using
   `grammar.edn`.  It should be possible to write grammars for other
-  programming languages as well.
+  programming languages as well.  Similarly for Janet and
+  `grammar.jdn`.
 
 
 ## Detailed Background
@@ -206,7 +207,7 @@ above sorts of things don't take much work, e.g.
 
 ```clojure
 :rules
-{:source [:repeat [:choice :_form
+[:source [:repeat [:choice :_form
                            :_gap]]
 
  :_gap [:choice :_ws
