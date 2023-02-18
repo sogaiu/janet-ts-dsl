@@ -7,14 +7,13 @@
   (def src
     (slurp "data/grammar.edn"))
 
-  (def rules-names
-    (process-edn! src))
+  (process-edn! src)
   
   (def expanded-grammar
     (expand-grammar (parse src)))
 
   (def json-as-str
-    (gen-json expanded-grammar rules-names))
+    (gen-json expanded-grammar))
 
   (def expected-json
     (slurp "data/edn-grammar.json"))

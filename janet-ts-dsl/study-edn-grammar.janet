@@ -3,7 +3,6 @@
 (defn make-capture-info
   []
   (def comments @[])
-  (def map-info @[])
   (def edn-capture-peg
     ~{:main (some :input)
       #
@@ -167,15 +166,10 @@
       :vector (sequence "["
                         (any :input)
                         (choice "]" (error (constant "missing ]"))))
-      # just capture the start, end positions of what's between the curlys
-      :map (drop
-             (cmt (sequence "{"
-                            (position)
-                            (any :input)
-                            (position)
-                            (choice "}"
-                                    (error (constant "missing }"))))
-                  ,|(array/push map-info $&)))
+      #
+      :map (sequence "{"
+                     (any :input)
+                     (choice "}" (error (constant "missing }"))))
       #
       :literal (choice :number
                        :macro-keyword
@@ -282,7 +276,7 @@
                            (set ":#'0123456789"))
       })
   #
-  [comments map-info edn-capture-peg])
+  [comments edn-capture-peg])
 
 (comment
 
@@ -307,7 +301,7 @@
      }
      ``)
 
-  (def [comments map-info ec-peg]
+  (def [comments ec-peg]
     (make-capture-info))
 
   (peg/match ec-peg src)
@@ -318,26 +312,11 @@
   # =>
   @[0 35 81 119 177]
 
-  (let [len (length map-info)]
-    (assert (= 2 len)
-            (string/format "should have 2 maps, but found: %d" len)))
-  # =>
-  true
-
-  map-info
-  # =>
-  @[[109 241] [14 243]]
-
-  (get map-info
-       (find-spanning-map map-info))
-  # =>
-  [14 243]
-
   )
 
 (defn process-edn!
   [src]
-  (def [comments map-info ec-peg]
+  (def [comments ec-peg]
     (make-capture-info))
   #
   (assert (peg/match ec-peg src)
@@ -348,57 +327,7 @@
   (each pos comments
     (put src pos (chr "#")))
   #
-  (def len (length map-info))
-  # total number of expected maps in the source
-  #
-  # 2 (+ 1) = outermost overall map +
-  #           :rules map +
-  #           :_tokens map (not strictly nececssary)
-  (assert (<= 2 len 3)
-          (string/format "should have 2 or 3 maps, but found: %d" len))
-  # need to know the order of the rules to get grammar.json -> parser.c
-  # conversion to work correctly (as well as know the "start symbol")
-  #
-  # find the overall spanning map (there should be one) so we can
-  # skip parsing it below -- although this seems unnecessary, there
-  # might not actually be an overall spanning map.  e.g. suppose the
-  # source contains two disjoint maps.
-  (def overall-map-idx
-    (find-spanning-map map-info))
-  #
-  (assert overall-map-idx
-          (string/format "did not find an overall spanning map among: %M"
-                         map-info))
-  #
-  (def cands @[])
-  #
-  (for i 0 (length map-info)
-    # skip the overall map
-    (when (not= i overall-map-idx)
-      (let [[start end] (get map-info i)
-            # this is a trick to treat the body of a struct as a tuple
-            # to get the order of the keys
-            as-tuple
-            (parse (string "["
-                           (buffer/slice src start end)
-                           "]"))
-            map-keys @[]]
-        (var found-tokens false)
-        (for j 0 (length as-tuple)
-          # the keys are at the even indeces
-          (when (even? j)
-            (def key (get as-tuple j))
-            (when (token-name? key)
-              (set found-tokens true))
-            (array/push map-keys key)))
-        # we don't want the struct associated with :_tokens
-        (unless found-tokens
-          (array/push cands map-keys)))))
-  #
-  (assert (one? (length cands))
-          (string/format "should only be one rules map"))
-  #
-  (first cands))
+  comments)
 
 (comment
 
@@ -430,7 +359,7 @@
   # change comments and find rule names in order
   (process-edn! src)
   # =>
-  @[:source :elt]
+  @[0 35 145 183 241]
 
   # ; line-comments are now # line-comments
   src

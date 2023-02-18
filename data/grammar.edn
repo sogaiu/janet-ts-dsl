@@ -1,4 +1,4 @@
-{:name "clojure"
+[:name "clojure"
 
  ;; a comment
  :extras []
@@ -14,7 +14,7 @@
           :_sym_unqualified]
 
  :_tokens
- {:WHITESPACE_CHAR
+ [:WHITESPACE_CHAR
   [:regex "["
           "\\f\\n\\r\\t, "
           "\\u000B\\u001C\\u001D\\u001E\\u001F"
@@ -181,10 +181,10 @@
   :SYMBOL
   [:token [:seq :SYMBOL_HEAD
                 [:repeat :SYMBOL_BODY]]]
-  }
+  ]
 
  :rules
- {:source [:repeat [:choice :_form
+ [:source [:repeat [:choice :_form
                             :_gap]]
 
   :_gap [:choice :_ws
@@ -414,4 +414,4 @@
                        [:repeat :_gap]
                        [:field "value" :_form]]
 
-  }}
+  ]]

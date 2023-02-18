@@ -50,34 +50,6 @@
 
   )
 
-(defn find-spanning-map
-  [map-info]
-  (var min-bound (get-in map-info [0 0]))
-  (var max-bound (get-in map-info [0 1]))
-  (var min-map-idx 0)
-  (var max-map-idx 0)
-  (for i 1 (length map-info)
-    (def [cl cr] (get map-info i))
-    (when (<= cl min-bound)
-      (set min-bound cl)
-      (set min-map-idx i))
-    (when (<= max-bound cr)
-      (set max-bound cr)
-      (set max-map-idx i)))
-  (when (= min-map-idx max-map-idx)
-    min-map-idx))
-
-(comment
-
-  (def map-info
-    @[[263 5154] [5167 12752] [1 12753]])
-
-  (get map-info
-       (find-spanning-map map-info))
-  # =>
-  [1 12753]
-
-  )
 (defn key-in-coll?
   [key coll]
   (var i 0)
