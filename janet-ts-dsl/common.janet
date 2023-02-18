@@ -78,3 +78,74 @@
   [1 12753]
 
   )
+(defn key-in-coll?
+  [key coll]
+  (var i 0)
+  (var found false)
+  (def coll-len (length coll))
+  (while (< i coll-len)
+    (when (= key (get coll i))
+      (set found true)
+      (break))
+    (+= i 2))
+  #
+  (when found
+    i))
+
+(comment
+
+  (key-in-coll? :extras
+                [:name "janet_simple"
+                 :rules {:source [:repeat "1"]}
+                 :extras []
+                 :supertypes []])
+  # =>
+  4
+
+  (key-in-coll? :should-not-find
+                [:name "janet_simple"
+                 :rules {:source [:repeat "1"]}
+                 :extras :should-not-find
+                 :supertypes []])
+  # =>
+  nil
+
+  )
+
+(defn get-val
+  [coll key]
+  (assert (indexed? coll)
+          (string/format "Expected indexed coll but got: %M"
+                         (type coll)))
+  (def idx
+    (key-in-coll? key coll))
+  (unless idx
+    (break))
+  # if idx is for a key, there should be a "next" item
+  (assert (not= idx
+                (length coll))
+          (string/format "Index is at end of coll: %M %M"
+                         idx (length coll)))
+  # item at next index
+  (get coll (inc idx)))
+
+(comment
+
+  (get-val [:name "janet_simple"
+            :rules {:source [:repeat "1"]}
+            :extras []
+            :supertypes []]
+           :rules)
+  # =>
+  {:source [:repeat "1"]}
+
+  (get-val [:name "janet_simple"
+            :rules {:source [:repeat "1"]}
+            :extras []
+            :supertypes []]
+           :empresses)
+  # =>
+  nil
+
+  )
+

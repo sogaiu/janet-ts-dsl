@@ -294,27 +294,26 @@
   )
 
 (defn emit-rules!
-  [grammar rules-names buf]
+  [grammar buf]
   (def rules-maybe
     (get grammar :rules))
-  (def type-of-rm
-    (type rules-maybe))
-  (assert (or (= :struct type-of-rm)
-              (= :table type-of-rm))
-          (string/format "rules should be a struct, found a %M"
-                         type-of-rm))
+  (assert (indexed? rules-maybe)
+          (string/format "rules should be indexed, found a %M"
+                         (type rules-maybe)))
   #
   (def rules rules-maybe)
   #
   (emit-start-obj! buf)
   #
-  (each key rules-names
-    (def expr
-      (get rules key))
+  (var i 0)
+  (while (< i (length rules))
+    (def key (get rules i))
+    (def expr (get rules (inc i)))
     (emit-indentation! buf)
     (emit-key! key buf)
     (emit-defs-rule! expr buf)
-    (emit-comma-nl! buf))
+    (emit-comma-nl! buf)
+    (+= i 2))
   (pop-comma-nl-maybe! buf)
   #
   (emit-end-obj! buf)
@@ -663,7 +662,7 @@
   )
 
 (defn emit-json!
-  [grammar rules-names buf]
+  [grammar buf]
   (assert (and (get grammar :name)
                (get grammar :rules))
           (string/format "grammar's keys missing name and/or rules: %M"
@@ -687,7 +686,7 @@
         (emit-word! grammar buf)
         #
         :rules
-        (emit-rules! grammar rules-names buf)
+        (emit-rules! grammar buf)
         #
         :extras
         (emit-extras! grammar buf)
@@ -723,17 +722,16 @@
   `grammar` is typically expanded from `grammar.jdn` by `expand-grammar`
   in `expand.janet`.
   ``
-  [grammar rules-names]
+  [grammar]
   (let [buf @""]
-    (emit-json! grammar rules-names buf)
+    (emit-json! grammar buf)
     buf))
 
 (comment
 
   # note: extras has implicit value if unspecified
   (gen-json {:name "hello"
-             :rules {:source "1"}}
-            [:source])
+             :rules [:source "1"]})
   # =>
   @``
    {

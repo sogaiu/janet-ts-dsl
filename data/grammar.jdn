@@ -1,4 +1,4 @@
-{:name "janet_simple"
+[:name "janet_simple"
 
  :extras [[:regex "\\s|\\x0b|\\x0c|\\x00"]
           :comment]
@@ -10,7 +10,7 @@
  :inline []
 
  :_tokens
- {:SIGN [:choice "-" "+"]
+ [:SIGN [:choice "-" "+"]
 
   :DIGIT [:regex "[0-9]"]
 
@@ -43,10 +43,10 @@
   [:repeat [:choice [:regex "[^" "\\\\" "\"" "]"]
                     [:regex "\\\\(.|\\n)"]]]
 
-  }
+  ]
 
  :rules
- {:source [:repeat :_lit]
+ [:source [:repeat :_lit]
 
   :comment [:regex "#.*"]
 
@@ -168,6 +168,7 @@
 
   :unquote_lit [:seq "," :_lit]
 
-  }
+  ]
 
- }
+ ]
+

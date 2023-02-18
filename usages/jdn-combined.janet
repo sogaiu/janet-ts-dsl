@@ -1,4 +1,3 @@
-(import ../janet-ts-dsl/study-jdn-grammar :prefix "")
 (import ../janet-ts-dsl/expand :prefix "")
 (import ../janet-ts-dsl/jdn-to-json :prefix "")
 
@@ -7,14 +6,11 @@
   (def src
     (slurp "data/grammar.jdn"))
 
-  (def rules-names
-    (process-jdn! src))
-
   (def expanded-grammar
     (expand-grammar (parse src)))
 
   (def json-as-str
-    (gen-json expanded-grammar rules-names))
+    (gen-json expanded-grammar))
 
   (def expected-json
     (slurp "data/jdn-grammar.json"))

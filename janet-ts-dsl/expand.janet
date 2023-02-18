@@ -24,11 +24,11 @@
 
 (defn expand-tokens
   [grammar]
-  (assert (dictionary? grammar)
-          (string/format "Expected dictionary for grammar, but found: %s"
+  (assert (indexed? grammar)
+          (string/format "Expected indexed ds for grammar, but found: %s"
                          (type grammar)))
   (def tokens
-    (get grammar :_tokens))
+    (table ;(get-val grammar :_tokens)))
   (assert (dictionary? tokens)
           (string/format "Expected dictionary for tokens, but found: %s"
                          (type tokens)))
@@ -117,20 +117,20 @@
   
   (def dict
     (expand-tokens
-      {:_tokens
-       {:SIGN [:choice "+" "-"]
+      [:_tokens
+       [:SIGN [:choice "+" "-"]
 
         :DIGIT [:regex "["
                 "0-9"
                 "]"]
 
         :INTEGER [:seq [:repeat1 :DIGIT]
-                  [:optional [:regex "[" "MN" "]"]]]
+                       [:optional [:regex "[" "MN" "]"]]]
 
         :NUMBER [:token [:prec 10
-                         [:seq [:optional :SIGN]
-                          :INTEGER]]]
-        }}))
+                               [:seq [:optional :SIGN]
+                                    :INTEGER]]]
+        ]]))
 
   (has-unexpanded? dict)
   # => false
@@ -158,8 +158,8 @@
 
   (def dict
     (expand-tokens
-      {:_tokens
-       {:SIGN [:choice "+" "-"]
+      [:_tokens
+       [:SIGN [:choice "+" "-"]
 
         :DIGIT [:regex "[0-9]"]
 
@@ -184,7 +184,7 @@
                                      [:choice :HEX_NUMBER
                                               :OCTAL_NUMBER
                                               :INTEGER]]]]
-        }}))
+        ]]))
 
   (has-unexpanded? dict)
   # =>
@@ -199,17 +199,17 @@
 #      that's not handled here yet
 (defn expand-rules
   [grammar tokens &opt drop]
-  (assert (dictionary? grammar)
-          (string/format "Expected dictionary for grammar, but found: %s"
+  (assert (indexed? grammar)
+          (string/format "Expected indexed ds for grammar, but found: %s"
                          (type grammar)))
   (assert (dictionary? tokens)
           (string/format "Expected dictionary for tokens, but found: %s"
                          (type tokens)))
   #
   (def rules
-    (get grammar :rules))
-  (assert (dictionary? rules)
-          (string/format "Expected dictionary for rules, but found: %s"
+    (get-val grammar :rules))
+  (assert (indexed? rules)
+          (string/format "Expected indexed ds for rules, but found: %s"
                          (type rules)))
   #
   (defn find-replacement
@@ -220,7 +220,7 @@
       replacement))
   #
   (def expansions @{})
-  (eachp [name expr] rules
+  (eachp [name expr] (table ;rules)
     (put expansions
          name
          (postwalk (fn [x]
@@ -236,14 +236,18 @@
                        #
                        x))
                    expr)))
+  (def indexed-expns @[])
+  (var i 0)
+  (while (< i (length rules))
+    (def key (get rules i))
+    (unless (and drop
+                 (token-name? key))
+      (array/push indexed-expns key)
+      (def expn (get expansions key))
+      (array/push indexed-expns expn))
+    (+= i 2))
   #
-  (if drop
-    (let [no-tokens @{}]
-      (eachp [key value] expansions
-        (when (not (token-name? key))
-          (put no-tokens key value)))
-      no-tokens)
-    expansions))
+  indexed-expns)
 
 (defn expand-grammar
   [grammar]
@@ -253,19 +257,17 @@
   (def rules
     (expand-rules grammar tokens true))
   #
-  {:name (get grammar :name)
-
-   # XXX: should support expanding this from expanded :rules?
-   #      recall how janet-simple used to have $.comment in extras
-   :extras (get grammar :extras)
-
-   :conflicts (get grammar :conflicts)
-
-   :externals (get grammar :externals)
-
-   :inline (get grammar :inline)
-
-   :supertypes (get grammar :supertypes)
-
-   :rules rules})
+  (def expanded
+    (table/to-struct
+      # XXX: move default values out of emit code and put here
+      (merge {:extras [:regex "\\s"]
+              :conflicts []
+              :precedences []
+              :externals []
+              :inline []
+              :supertypes []}
+             (table ;grammar)
+             {:rules rules})))
+  #
+  expanded)
 
