@@ -328,11 +328,7 @@
               (= :tuple type-of-em))
           (string/format "extras should be a tuple or nil, found a %M"
                          type-of-em))
-  # extras needs special handling - dsl.js
-  (def extras
-    (if (nil? extras-maybe)
-      [[:regex "\\s"]]
-      extras-maybe))
+  (def extras extras-maybe)
   #
   (emit-start-array! buf)
   #
@@ -377,11 +373,7 @@
               (= :tuple type-of-em))
           (string/format "conflicts should be a tuple or nil, found a %M"
                          type-of-em))
-  # see dsl.js
-  (def conflicts
-    (if (nil? conflicts-maybe)
-      []
-      conflicts-maybe))
+  (def conflicts conflicts-maybe)
   #
   (emit-start-array! buf)
   #
@@ -441,11 +433,7 @@
               (= :tuple type-of-em))
           (string/format "externals should be a tuple or nil, found a %M"
                          type-of-em))
-  # see dsl.js
-  (def externals
-    (if (nil? externals-maybe)
-      []
-      externals-maybe))
+  (def externals externals-maybe)
   #
   (emit-start-array! buf)
   #
@@ -489,11 +477,7 @@
               (= :tuple type-of-em))
           (string/format "precedences should be a tuple or nil, found a %M"
                          type-of-em))
-  # see dsl.js
-  (def precedences
-    (if (nil? precedences-maybe)
-      []
-      precedences-maybe))
+  (def precedences precedences-maybe)
   #
   (emit-start-array! buf)
   #
@@ -568,11 +552,7 @@
               (= :tuple type-of-em))
           (string/format "inline should be a tuple or nil, found a %M"
                          type-of-em))
-  # see dsl.js
-  (def inline
-    (if (nil? inline-maybe)
-      []
-      inline-maybe))
+  (def inline inline-maybe)
   #
   (emit-start-array! buf)
   #
@@ -611,11 +591,7 @@
               (= :tuple type-of-em))
           (string/format "supertypes should be a tuple or nil, found a %M"
                          type-of-em))
-  # see dsl.js
-  (def supertypes
-    (if (nil? supertypes-maybe)
-      []
-      supertypes-maybe))
+  (def supertypes supertypes-maybe)
   #
   (emit-start-array! buf)
   #
@@ -721,6 +697,7 @@
   in `expand.janet`.
   ``
   [grammar]
+  #
   (let [buf @""]
     (emit-json! grammar buf)
     buf))
@@ -728,8 +705,9 @@
 (comment
 
   # note: extras has implicit value if unspecified
-  (gen-json {:name "hello"
-             :rules [:source "1"]})
+  (gen-json (merge grammar-defaults
+                   {:name "hello"
+                    :rules [:source "1"]}))
   # =>
   @``
    {

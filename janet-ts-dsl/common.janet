@@ -121,3 +121,11 @@
 
   )
 
+(def grammar-defaults
+  {:extras [[:regex "\\s"]]
+   :conflicts []
+   :precedences []
+   :externals []
+   :inline []
+   :supertypes []})
+

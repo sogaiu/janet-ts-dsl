@@ -257,13 +257,7 @@
   #
   (def expanded
     (table/to-struct
-      # XXX: move default values out of emit code and put here
-      (merge {:extras [:regex "\\s"]
-              :conflicts []
-              :precedences []
-              :externals []
-              :inline []
-              :supertypes []}
+      (merge grammar-defaults
              (table ;grammar)
              {:rules rules})))
   #
