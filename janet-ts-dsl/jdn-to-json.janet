@@ -305,15 +305,13 @@
   #
   (emit-start-obj! buf)
   #
-  (var i 0)
-  (while (< i (length rules))
+  (each i (range 0 (length rules) 2)
     (def key (get rules i))
     (def expr (get rules (inc i)))
     (emit-indentation! buf)
     (emit-key! key buf)
     (emit-defs-rule! expr buf)
-    (emit-comma-nl! buf)
-    (+= i 2))
+    (emit-comma-nl! buf))
   (pop-comma-nl-maybe! buf)
   #
   (emit-end-obj! buf)

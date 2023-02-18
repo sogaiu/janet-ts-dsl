@@ -198,7 +198,7 @@
 # XXX: in theory, there could be [:regex ...] containing multiple arguments,
 #      that's not handled here yet
 (defn expand-rules
-  [grammar tokens &opt drop]
+  [grammar tokens &opt drop-tokens]
   (assert (indexed? grammar)
           (string/format "Expected indexed ds for grammar, but found: %s"
                          (type grammar)))
@@ -237,15 +237,13 @@
                        x))
                    expr)))
   (def indexed-expns @[])
-  (var i 0)
-  (while (< i (length rules))
+  (each i (range 0 (length rules) 2)
     (def key (get rules i))
-    (unless (and drop
+    (unless (and drop-tokens
                  (token-name? key))
       (array/push indexed-expns key)
       (def expn (get expansions key))
-      (array/push indexed-expns expn))
-    (+= i 2))
+      (array/push indexed-expns expn)))
   #
   indexed-expns)
 
