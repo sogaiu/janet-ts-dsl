@@ -98,10 +98,35 @@ tree-sitter's flavor:
   for more details.
 
 * Order of properties can matter within the main object typically
-  representing the rules of the grammar.  Technically speaking, older
-  versions of JavaScript didn't guarantee an order, though in more
-  recent versions things may be different.  Whatever the case, AFAIU,
-  no specific version of JavaScript / ECMAScript compatibility is
-  claimed for tree-sitter.
+  representing the rules of the grammar:
+
+  > 7. Rule Order - If none of the above criteria can be used to
+  >    select one token over another, Tree-sitter will prefer the
+  >    token that appears earlier in the grammar.
+
+  via: https://tree-sitter.github.io/tree-sitter/creating-parsers#conflicting-tokens
+
+  It's also the case if one's "start symbol" rule is not the first
+  one, things may not work as expected.
+
+  Technically speaking, older versions of JavaScript didn't guarantee
+  an order, though in more recent versions things may be
+  different...don't really want to know [the
+  details](https://stackoverflow.com/a/30919039)...so what's the case
+  for tree-sitter?
+
+  With respect to JavaScript compatibility, there is [this
+  claim](https://tree-sitter.github.io/tree-sitter/creating-parsers#dependencies):
+
+  > Tree-sitter grammars are written in JavaScript, and Tree-sitter
+  > uses Node.js to interpret JavaScript files. It requires the node
+  > command to be in one of the directories in your PATH. You’ll need
+  > Node.js version 6.0 or greater.
+
+  I think it turns out in practice that one may need to try various
+  different Node.js versions to get something that works.  For
+  example, [in this
+  case](https://github.com/tree-sitter/tree-sitter/issues/409), at the
+  time, Node.js 12.x was "too recent".
 
 ---
