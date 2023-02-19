@@ -1,9 +1,7 @@
 [:name "clojure"
 
- ;; a comment
+ ;; this is necessary to explicitly blank the default
  :extras []
-
- :conflicts []
 
  :inline [:_kwd_leading_slash
           :_kwd_just_slash
