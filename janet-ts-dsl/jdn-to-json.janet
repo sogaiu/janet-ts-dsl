@@ -6,6 +6,9 @@
 (import ./emit-json :prefix "")
 (import ./common :prefix "")
 
+########################################################################
+
+# this order might matter
 (def grammar-keys-in-order
   [:name
    :word
@@ -27,6 +30,7 @@
                                 #      should be?
                                 -1)
                      name-maybe)
+          # XXX: error message not quite right for leading digits
           (string/format "name contains unallowed chars: %s"
                          name-maybe))
   #
@@ -101,10 +105,6 @@
 # * token-rule <- token, token.immediate
 # * field-rule
 # * prec-rule <- prec, prec.left, prec.right, prec.dynamic
-
-# XXX: not done yet
-#
-# * prec-rule <- prec.left, prec.right, prec.dynamic
 
 (defn emit-defs-rule!
   [item buf]
@@ -709,7 +709,7 @@
         #
         :supertypes
         (emit-supertypes! grammar buf)
-        #
+        # defensive measure
         (errorf "Unknown key: %M" key))
       #
       (emit-comma-nl! buf)))
