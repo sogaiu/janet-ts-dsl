@@ -26,7 +26,7 @@ Regular expression support differs in at least two sorts of ways:
   operations) are supported.
 
 See
-[here](https://github.com/sogaiu/ts-questions/blob/943286abf49bdc621ee6466c2ca0dd75d2a76606/questions/what-regex-features-are-supported/README.md)
+[here](https://github.com/sogaiu/ts-questions/blob/a0d92c8fa5ed496240ef764f3c9dd2ae89645781/questions/what-regex-features-are-supported/README.md)
 for more details.
 
 ### Property Order
