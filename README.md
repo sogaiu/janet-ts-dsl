@@ -3,7 +3,29 @@
 Support for converting a tree-sitter grammar expressed in
 [EDN](https://github.com/edn-format/edn) or
 [JDN](https://github.com/andrewchambers/janet-jdn) to `grammar.json`
-and `grammar.js`.  See the `data` directory for some examples.
+and `grammar.js`.
+
+Here's a bit of how it can look:
+
+```clojure
+ :rules
+ [:source [:repeat [:choice :_form
+                            :_gap]]
+
+  :_gap [:choice :_ws
+                 :comment
+                 :dis_expr]
+
+  :_ws :WHITESPACE
+
+  :comment :COMMENT
+
+  :dis_expr [:seq [:field "marker" "#_"]
+                  [:repeat :_gap]
+                  [:field "value" :_form]]
+```
+
+See the `data` directory for some examples.
 
 ## Background
 
