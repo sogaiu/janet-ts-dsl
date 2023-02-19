@@ -3,11 +3,7 @@
  :extras [[:regex "\\s|\\x0b|\\x0c|\\x00"]
           :comment]
 
- :conflicts []
-
  :externals [:long_buf_lit :long_str_lit]
-
- :inline []
 
  :_tokens
  [:SIGN [:choice "-" "+"]

@@ -4,6 +4,8 @@
   (when (os/getenv "VERBOSE")
     (eprintf fmt ;args)))
 
+########################################################################
+
 (defn token-name?
   [kwd]
   (def first-byte-as-str
@@ -32,6 +34,8 @@
 
   )
 
+########################################################################
+
 (defn escape-string
   [a-str]
   (->> a-str
@@ -49,6 +53,8 @@
   "\\\""
 
   )
+
+########################################################################
 
 (defn key-in-coll?
   [key coll]
@@ -121,6 +127,8 @@
 
   )
 
+########################################################################
+
 (def grammar-defaults
   {:extras [[:regex "\\s"]]
    :conflicts []
@@ -128,4 +136,26 @@
    :externals []
    :inline []
    :supertypes []})
+
+# XXX: comprehensive?
+(def reserved-words
+  {:alias true
+   :choice true
+   :field true
+   :optional true
+   :prec true
+   :prec_dynamic true
+   :prec_left true
+   :prec_right true
+   # XXX: we added this one
+   :regex true
+   :repeat true
+   :repeat1 true
+   :seq true
+   :token true
+   :token_immediate true})
+
+(defn reserved?
+  [kwd]
+  (get reserved-words kwd))
 
