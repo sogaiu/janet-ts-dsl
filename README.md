@@ -8,7 +8,8 @@ and `grammar.js`.  See the `data` directory for some examples.
 ## Background
 
 The default DSL for expressing a grammar for tree-sitter is something
-that is quite close to but not quite a standard JavaScript [1].
+that is quite close to but [not quite a standard
+JavaScript](./doc/javascript.md).
 
 The TLDR is that I found working with JavaScript and existing
 formatters for this particular endeavor to be unsatisfactory enough to
@@ -79,54 +80,3 @@ Some miscellaneous observations:
   `grammar.edn`.  It should be possible to write grammars for other
   programming languages as well.  Similarly for Janet and
   `grammar.jdn`.
-
-## Footnotes
-
-[1] Some things that differ from "ordinary" JavaScript in
-tree-sitter's flavor:
-
-* Regular expression support differs in at least two sorts of ways:
-
-  * Some standard constructs (e.g. assertions such as `^` and `$` are
-    not supported).
-
-  * Some non-standard constructs (e.g. character class binary
-    operations) are supported.
-
-  See
-  [here](https://github.com/sogaiu/ts-questions/blob/943286abf49bdc621ee6466c2ca0dd75d2a76606/questions/what-regex-features-are-supported/README.md)
-  for more details.
-
-* Order of properties can matter within the main object typically
-  representing the rules of the grammar:
-
-  > 7. Rule Order - If none of the above criteria can be used to
-  >    select one token over another, Tree-sitter will prefer the
-  >    token that appears earlier in the grammar.
-
-  via: https://tree-sitter.github.io/tree-sitter/creating-parsers#conflicting-tokens
-
-  It's also the case if one's "start symbol" rule is not the first
-  one, things may not work as expected.
-
-  Technically speaking, older versions of JavaScript didn't guarantee
-  an order, though in more recent versions things may be
-  different...don't really want to know [the
-  details](https://stackoverflow.com/a/30919039)...so what's the case
-  for tree-sitter?
-
-  With respect to JavaScript compatibility, there is [this
-  claim](https://tree-sitter.github.io/tree-sitter/creating-parsers#dependencies):
-
-  > Tree-sitter grammars are written in JavaScript, and Tree-sitter
-  > uses Node.js to interpret JavaScript files. It requires the node
-  > command to be in one of the directories in your PATH. You’ll need
-  > Node.js version 6.0 or greater.
-
-  I think it turns out in practice that one may need to try various
-  different Node.js versions to get something that works.  For
-  example, [in this
-  case](https://github.com/tree-sitter/tree-sitter/issues/409), at the
-  time, Node.js 12.x was "too recent".
-
----
