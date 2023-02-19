@@ -30,8 +30,7 @@
                                 #      should be?
                                 -1)
                      name-maybe)
-          # XXX: error message not quite right for leading digits
-          (string/format "name contains unallowed chars: %s"
+          (string/format "name should be a valid c identifier but isn't: %s"
                          name-maybe))
   #
   (emit-str! name-maybe buf))
@@ -49,7 +48,7 @@
           (emit-name! {:name "2fun"} buf)
           ([err]
             err))]
-    (string/has-prefix? "name contains unallowed" result))
+    (string/has-prefix? "name should be a valid c" result))
   # =>
   true
 
