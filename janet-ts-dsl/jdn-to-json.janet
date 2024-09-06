@@ -40,7 +40,7 @@
   (let [buf @""]
     (emit-name! {:name "janet_simple"} buf))
   # =>
-  @"\"janet_simple\""
+  @`"janet_simple"`
 
   (let [buf @""
         result
@@ -55,7 +55,7 @@
   (let [buf @""]
     (emit-name! {:name "clojure"} buf))
   # =>
-  @"\"clojure\""
+  @`"clojure"`
   )
 
 (defn emit-word!
@@ -86,7 +86,7 @@
   (let [buf @""]
     (emit-word! {:word :basic_identifier} buf))
   # =>
-  @"\"basic_identifier\""
+  @`"basic_identifier"`
 
   )
 
@@ -261,64 +261,54 @@
   (let [buf @""]
     (emit-defs-rule! [:regex "[" "0-9" "]"] buf))
   # =>
-  @``
-   {
-     "type": "PATTERN",
-     "value": "[0-9]"
-   }
-   ``
+  (buffer `{` "\n"
+          `  "type": "PATTERN",` "\n"
+          `  "value": "[0-9]"` "\n"
+          `}`)
 
   (let [buf @""]
     (emit-defs-rule! :num_lit buf))
   # =>
-  @``
-   {
-     "type": "SYMBOL",
-     "name": "num_lit"
-   }
-   ``
+  (buffer `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "num_lit"` "\n"
+          `}`)
 
   (let [buf @""]
     (emit-defs-rule! "nil" buf))
   # =>
-  @``
-   {
-     "type": "STRING",
-     "value": "nil"
-   }
-   ``
+  (buffer `{` "\n"
+          `  "type": "STRING",` "\n"
+          `  "value": "nil"` "\n"
+          `}`)
 
   (let [buf @""]
     (emit-defs-rule! [:repeat :_lit] buf))
   # =>
-  @``
-   {
-     "type": "REPEAT",
-     "content": {
-     "type": "SYMBOL",
-     "name": "_lit"
-   }
-   }
-   ``
+  (buffer `{` "\n"
+          `  "type": "REPEAT",` "\n"
+          `  "content": {` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "_lit"` "\n"
+          `}` "\n"
+          `}`)
 
   (let [buf @""]
     (emit-defs-rule! [:choice "-" "+"] buf))
   # =>
-  @``
-   {
-     "type": "CHOICE",
-     "members": [
-   {
-     "type": "STRING",
-     "value": "-"
-   },
-   {
-     "type": "STRING",
-     "value": "+"
-   }
-   ]
-   }
-   ``
+  (buffer `{` "\n"
+          `  "type": "CHOICE",` "\n"
+          `  "members": [` "\n"
+          `{` "\n"
+          `  "type": "STRING",` "\n"
+          `  "value": "-"` "\n"
+          `},` "\n"
+          `{` "\n"
+          `  "type": "STRING",` "\n"
+          `  "value": "+"` "\n"
+          `}` "\n"
+          `]` "\n"
+          `}`)
 
   )
 
@@ -377,18 +367,16 @@
                            [:regex "#.*"]]}
                  buf))
   # =>
-  @``
-   [
-   {
-     "type": "PATTERN",
-     "value": "\\s|\\x0b|\\x0c|\\x00"
-   },
-   {
-     "type": "PATTERN",
-     "value": "#.*"
-   }
-   ]
-   ``
+   (buffer `[` "\n"
+           `{` "\n"
+           `  "type": "PATTERN",` "\n"
+           `  "value": "\\s|\\x0b|\\x0c|\\x00"` "\n"
+           `},` "\n"
+           `{` "\n"
+           `  "type": "PATTERN",` "\n"
+           `  "value": "#.*"` "\n"
+           `}` "\n"
+           `]`)
 
   )
 
@@ -438,18 +426,17 @@
                                  [:primary :implicit_class_handle]]}
                     buf))
   # =>
-  @``
-   [
-   [
-     "constant_primary",
-     "primary"
-   ],
-   [
-     "primary",
-     "implicit_class_handle"
-   ]
-   ]
-   ``
+  (buffer `[` "\n"
+          `[` "\n"
+          `  "constant_primary",` "\n"
+          `  "primary"` "\n"
+          `],` "\n"
+          `[` "\n"
+          `  "primary",` "\n"
+          `  "implicit_class_handle"` "\n"
+          `]` "\n"
+          `]`)
+
   )
 
 (defn emit-externals!
@@ -479,20 +466,18 @@
 
   (let [buf @""]
     (emit-externals! {:externals [:long_buf_lit :long_str_lit]}
-                    buf))
+                     buf))
   # =>
-  @``
-   [
-   {
-     "type": "SYMBOL",
-     "name": "long_buf_lit"
-   },
-   {
-     "type": "SYMBOL",
-     "name": "long_str_lit"
-   }
-   ]
-   ``
+  (buffer `[` "\n"
+          `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "long_buf_lit"` "\n"
+          `},` "\n"
+          `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "long_str_lit"` "\n"
+          `}` "\n"
+          `]`)
 
   )
 
@@ -538,37 +523,36 @@
 
   (let [buf @""]
     (emit-precedences! {:precedences [["document_directive" "body_directive"]
-                                     ["special" "immediate" "non-immediate"]]}
-                      buf))
+                                      ["special" "immediate" "non-immediate"]]}
+                       buf))
   # =>
-  @``
-   [
-   [
-   {
-     "type": "STRING",
-     "value": "document_directive"
-   },
-   {
-     "type": "STRING",
-     "value": "body_directive"
-   }
-   ],
-   [
-   {
-     "type": "STRING",
-     "value": "special"
-   },
-   {
-     "type": "STRING",
-     "value": "immediate"
-   },
-   {
-     "type": "STRING",
-     "value": "non-immediate"
-   }
-   ]
-   ]
-   ``
+  (buffer `[`                               "\n"
+          `[`                               "\n"
+          `{`                               "\n"
+          `  "type": "STRING",`             "\n"
+          `  "value": "document_directive"` "\n"
+          `},`                              "\n"
+          `{`                               "\n"
+          `  "type": "STRING",`             "\n"
+          `  "value": "body_directive"`     "\n"
+          `}`                               "\n"
+          `],`                              "\n"
+          `[`                               "\n"
+          `{`                               "\n"
+          `  "type": "STRING",`             "\n"
+          `  "value": "special"`            "\n"
+          `},`                              "\n"
+          `{`                               "\n"
+          `  "type": "STRING",`             "\n"
+          `  "value": "immediate"`          "\n"
+          `},`                              "\n"
+          `{`                               "\n"
+          `  "type": "STRING",`             "\n"
+          `  "value": "non-immediate"`      "\n"
+          `}`                               "\n"
+          `]`                               "\n"
+          `]`)
+
   )
 
 (defn emit-inline!
@@ -598,15 +582,13 @@
 
   (let [buf @""]
     (emit-inline! {:inline [:_sym_qualified
-                           :_sym_unqualified]}
-                    buf))
+                            :_sym_unqualified]}
+                  buf))
   # =>
-  @``
-   [
-   "_sym_qualified",
-   "_sym_unqualified"
-   ]
-   ``
+  (buffer `[` "\n"
+          `"_sym_qualified",` "\n"
+          `"_sym_unqualified"` "\n"
+          `]`)
 
   )
 
@@ -637,30 +619,28 @@
 
   (let [buf @""]
     (emit-supertypes! {:supertypes [:_declaration
-                                   :_expression
-                                   :_statement
-                                   :_type]} buf))
+                                    :_expression
+                                    :_statement
+                                    :_type]} buf))
   # =>
-  @``
-   [
-   {
-     "type": "SYMBOL",
-     "name": "_declaration"
-   },
-   {
-     "type": "SYMBOL",
-     "name": "_expression"
-   },
-   {
-     "type": "SYMBOL",
-     "name": "_statement"
-   },
-   {
-     "type": "SYMBOL",
-     "name": "_type"
-   }
-   ]
-   ``
+  (buffer `[` "\n"
+          `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "_declaration"` "\n"
+          `},` "\n"
+          `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "_expression"` "\n"
+          `},` "\n"
+          `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "_statement"` "\n"
+          `},` "\n"
+          `{` "\n"
+          `  "type": "SYMBOL",` "\n"
+          `  "name": "_type"` "\n"
+          `}` "\n"
+          `]`)
 
   )
 
@@ -738,37 +718,35 @@
                    {:name "hello"
                     :rules [:source "1"]}))
   # =>
-  @``
-   {
-     "name": "hello",
-     "rules": {
-     "source": {
-     "type": "STRING",
-     "value": "1"
-   }
-   },
-     "extras": [
-   {
-     "type": "PATTERN",
-     "value": "\\s"
-   }
-   ],
-     "conflicts": [
-
-   ],
-     "precedences": [
-
-   ],
-     "externals": [
-
-   ],
-     "inline": [
-
-   ],
-     "supertypes": [
-
-   ]
-   }
-   ``
+  (buffer `{` "\n"
+          `  "name": "hello",` "\n"
+          `  "rules": {` "\n"
+          `  "source": {` "\n"
+          `  "type": "STRING",` "\n"
+          `  "value": "1"` "\n"
+          `}` "\n"
+          `},` "\n"
+          `  "extras": [` "\n"
+          `{` "\n"
+          `  "type": "PATTERN",` "\n"
+          `  "value": "\\s"` "\n"
+          `}` "\n"
+          `],` "\n"
+          `  "conflicts": [` "\n"
+          "\n"
+          `],` "\n"
+          `  "precedences": [` "\n"
+          "\n"
+          `],` "\n"
+          `  "externals": [` "\n"
+          "\n"
+          `],` "\n"
+          `  "inline": [` "\n"
+          "\n"
+          `],` "\n"
+          `  "supertypes": [` "\n"
+          "\n"
+          `]` "\n"
+          `}`)
 
   )

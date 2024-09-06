@@ -281,25 +281,23 @@
 (comment
 
   (def src
-    @``
-     ;; a comment
-     {
-      :inline [
-              ;; odd isn't it?
-              ]
-
-      :name "fancy"
-
-      ;; another comment
-      :rules {
-              ;; nice comment
-              :source [:repeat :elt]
-
-              ;; another nice comment
-              :elt [:choice "0" "1"]
-             }
-     }
-     ``)
+     (buffer `;; a comment`                     "\n"
+             `{`                                "\n"
+             ` :inline [`                       "\n"
+             `         ;; odd isn't it?`        "\n"
+             `         ]`                       "\n"
+                                                "\n"
+             ` :name "fancy"`                   "\n"
+                                                "\n"
+             ` ;; another comment`              "\n"
+             ` :rules {`                        "\n"
+             `         ;; nice comment`         "\n"
+             `         :source [:repeat :elt]`  "\n"
+                                                "\n"
+             `         ;; another nice comment` "\n"
+             `         :elt [:choice "0" "1"]`  "\n"
+             `        }`                        "\n"
+             `}`))
 
   (def [comments ec-peg]
     (make-capture-info))
@@ -332,29 +330,27 @@
 (comment
 
   (def src
-    @``
-     ;; a comment
-     {
-      :inline [
-              ;; odd isn't it?
-              ]
-
-      :name "fancy"
-
-      :_tokens {
-                :WHITESPACE [:regex "\\s+"]
-               }
-
-      ;; another comment
-      :rules {
-              ;; nice comment
-              :source [:repeat :elt]
-
-              ;; another nice comment
-              :elt [:choice "0" "1"]
-             }
-     }
-     ``)
+    (buffer `;; a comment`                           "\n"
+            `{`                                      "\n"
+            ` :inline [`                             "\n"
+            `         ;; odd isn't it?`              "\n"
+            `         ]`                             "\n"
+                                                     "\n"
+            ` :name "fancy"`                         "\n"
+                                                     "\n"
+            ` :_tokens {`                            "\n"
+            `           :WHITESPACE [:regex "\\s+"]` "\n"
+            `          }`                            "\n"
+                                                     "\n"
+            ` ;; another comment`                    "\n"
+            ` :rules {`                              "\n"
+            `         ;; nice comment`               "\n"
+            `         :source [:repeat :elt]`        "\n"
+                                                     "\n"
+            `         ;; another nice comment`       "\n"
+            `         :elt [:choice "0" "1"]`        "\n"
+            `        }`                              "\n"
+            `}`))
 
   # change comments and find rule names in order
   (process-edn! src)
@@ -364,28 +360,27 @@
   # ; line-comments are now # line-comments
   src
   # =>
-  @``
-   #; a comment
-   {
-    :inline [
-            #; odd isn't it?
-            ]
-
-    :name "fancy"
-
-    :_tokens {
-              :WHITESPACE [:regex "\\s+"]
-             }
-
-    #; another comment
-    :rules {
-            #; nice comment
-            :source [:repeat :elt]
-
-            #; another nice comment
-            :elt [:choice "0" "1"]
-           }
-   }
-   ``
+    (buffer `#; a comment`                           "\n"
+            `{`                                      "\n"
+            ` :inline [`                             "\n"
+            `         #; odd isn't it?`              "\n"
+            `         ]`                             "\n"
+                                                     "\n"
+            ` :name "fancy"`                         "\n"
+                                                     "\n"
+            ` :_tokens {`                            "\n"
+            `           :WHITESPACE [:regex "\\s+"]` "\n"
+            `          }`                            "\n"
+                                                     "\n"
+            ` #; another comment`                    "\n"
+            ` :rules {`                              "\n"
+            `         #; nice comment`               "\n"
+            `         :source [:repeat :elt]`        "\n"
+                                                     "\n"
+            `         #; another nice comment`       "\n"
+            `         :elt [:choice "0" "1"]`        "\n"
+            `        }`                              "\n"
+            `}`)
 
   )
+

@@ -151,7 +151,7 @@
   (let [buf @""]
     (emit-name! [:name "janet_simple"] buf))
   # =>
-  @"\"janet_simple\""
+  @`"janet_simple"`
 
   (let [buf @""
         result
@@ -166,7 +166,7 @@
   (let [buf @""]
     (emit-name! [:name "clojure"] buf))
   # =>
-  @"\"clojure\""
+  @`"clojure"`
   )
 
 (defn emit-extras!
@@ -199,12 +199,10 @@
                             :comment]]
                  buf))
   # =>
-  @``
-   [
-   regex("\\s|\\x0b|\\x0c|\\x00"),
-   $.comment
-   ]
-   ``
+  (buffer "[" "\n"
+          `regex("\\s|\\x0b|\\x0c|\\x00"),` "\n"
+          "$.comment" "\n"
+          "]")
 
   )
 
@@ -237,12 +235,10 @@
     (emit-externals! [:externals [:long_buf_lit :long_str_lit]]
                      buf))
   # =>
-  @``
-   [
-   $.long_buf_lit,
-   $.long_str_lit
-   ]
-   ``
+  (buffer "[" "\n"
+          "$.long_buf_lit," "\n"
+          "$.long_str_lit" "\n"
+          "]")
 
   )
 
@@ -277,14 +273,12 @@
                                     :_statement
                                     :_type]] buf))
   # =>
-  @``
-   [
-   $._declaration,
-   $._expression,
-   $._statement,
-   $._type
-   ]
-   ``
+  (buffer "[" "\n"
+          "$._declaration," "\n"
+          "$._expression," "\n"
+          "$._statement," "\n"
+          "$._type" "\n"
+          "]")
 
   )
 
@@ -318,12 +312,10 @@
                             :_sym_unqualified]]
                     buf))
   # =>
-  @``
-   [
-   $._sym_qualified,
-   $._sym_unqualified
-   ]
-   ``
+  (buffer "[\n"
+          "$._sym_qualified,\n"
+          "$._sym_unqualified\n"
+          "]")
 
   )
 
@@ -372,16 +364,14 @@
                                   [:primary :implicit_class_handle]]]
                     buf))
   # =>
-  @``
-   [
-   [
-   $.constant_primary, $.primary
-   ],
-   [
-   $.primary, $.implicit_class_handle
-   ]
-   ]
-   ``
+  (buffer "[" "\n"
+          "[" "\n"
+          "$.constant_primary, $.primary" "\n"
+          "]," "\n"
+          "[" "\n"
+          "$.primary, $.implicit_class_handle" "\n"
+          "]" "\n"
+          "]")
   )
 
 (defn emit-word!
@@ -412,7 +402,7 @@
   (let [buf @""]
     (emit-word! [:word :basic_identifier] buf))
   # =>
-  @"\"basic_identifier\""
+  @`"basic_identifier"`
 
   )
 
@@ -461,19 +451,17 @@
                                       ["special" "immediate" "non-immediate"]]]
                        buf))
   # =>
-  @``
-   [
-   [
-   "document_directive",
-   "body_directive"
-   ],
-   [
-   "special",
-   "immediate",
-   "non-immediate"
-   ]
-   ]
-   ``
+  (buffer "[" "\n"
+          "[" "\n"
+          `"document_directive",` "\n"
+          `"body_directive"` "\n"
+          "]," "\n"
+          "[" "\n"
+          `"special",` "\n"
+          `"immediate",` "\n"
+          `"non-immediate"` "\n"
+          "]" "\n"
+          "]")
   )
 
 (defn emit-rules!
@@ -517,22 +505,20 @@
                                           [:field "value" :_form]]]]
                  buf))
   # =>
-  @``
-   {
-   source: $ =>
-   repeat($._lit),
-   comment: $ =>
-   regex("#.*"),
-   _gap: $ =>
-   choice($._ws, $.comment, $.dis_expr),
-   _ws: $ =>
-   WHITESPACE,
-   comment: $ =>
-   COMMENT,
-   dis_expr: $ =>
-   seq(field("marker", "#_"), repeat($._gap), field("value", $._form))
-   }
-   ``
+  (buffer `{` "\n"
+          `source: $ =>` "\n"
+          `repeat($._lit),` "\n"
+          `comment: $ =>` "\n"
+          `regex("#.*"),` "\n"
+          `_gap: $ =>` "\n"
+          `choice($._ws, $.comment, $.dis_expr),` "\n"
+          `_ws: $ =>` "\n"
+          `WHITESPACE,` "\n"
+          `comment: $ =>` "\n"
+          `COMMENT,` "\n"
+          `dis_expr: $ =>` "\n"
+          `seq(field("marker", "#_"), repeat($._gap), field("value", $._form))` "\n"
+          `}`)
 
   )
 
